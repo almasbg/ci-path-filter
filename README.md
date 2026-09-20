@@ -48,7 +48,6 @@ ci-path-filter/
 │   ├── test_evaluator.py        # Logic combinations & assignment scenarios
 │   └── test_cli.py              # CLI integration tests & error handling
 ├── pyproject.toml               # PEP 517 / 621 packaging & test config
-├── Makefile                     # Standard developer commands (install, test, lint, run)
 ├── filters.yaml                 # Default filters configuration file
 ├── filters.example.yml          # Example configuration file
 ├── changed_files.example.txt    # Sample changed file paths for testing
@@ -130,7 +129,7 @@ tests=false
 
 ---
 
-## CI/CD Pipeline Integration
+## Integrating into Your CI/CD Pipelines
 
 ### GitLab CI Example (`.gitlab-ci.yml`)
 
@@ -146,6 +145,7 @@ detect-changes:
   stage: filter
   image: python:3.13-slim
   before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
     - pip install git+https://github.com/almasbg/ci-path-filter.git@main
   script:
     - git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA | ci-path-filter -c filters.yaml -o build.env
@@ -215,6 +215,28 @@ jobs:
 
 ---
 
+## Development & Automated CI
+
+### Local Testing & Quality Checks
+
+Run tests and code quality tools directly:
+```bash
+# Run all unit and integration tests with coverage
+pytest
+
+# Run linter
+ruff check .
+
+# Check formatting
+ruff format --check .
+
+# Automatically format code
+ruff format .
+
+# Run sample CLI execution
+ci-path-filter -c filters.yaml -f changed_files.example.txt -o .env
+```
+
 ### Repository Automated CI Workflow (`.github/workflows/ci.yml`)
 
 The repository's internal CI pipeline runs linting, formatting checks, and a Python matrix test suite on every pull request and push:
@@ -264,37 +286,6 @@ jobs:
           ci-path-filter -c filters.yaml -f changed_files.example.txt -o smoke_test.env
           cat smoke_test.env
           test -f smoke_test.env
-```
-
----
-
-## Running Tests & Quality Checks
-
-Using standard `make` commands:
-```bash
-# Run all unit and integration tests with coverage
-make test
-
-# Run linter and formatting check
-make lint
-
-# Automatically format code
-make format
-
-# Run sample CLI execution
-make run
-```
-
-Or invoke the underlying tools directly:
-```bash
-# Run tests with pytest
-pytest
-
-# Run linter
-ruff check .
-
-# Format check
-ruff format --check .
 ```
 
 ---

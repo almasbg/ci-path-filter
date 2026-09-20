@@ -21,6 +21,7 @@ lint-and-test:
 detect-changed-paths:
   stage: filter
   before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
     - pip install -e .
   script:
     # Compares changed files between base branch and current commit, or uses changed_files.example.txt in local testing
