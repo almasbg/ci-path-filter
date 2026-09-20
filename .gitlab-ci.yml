@@ -1,0 +1,61 @@
+stages:
+  - test
+  - filter
+  - downstream
+
+default:
+  image: python:3.13-slim
+
+# Pipeline verification for the tool repository
+lint-and-test:
+  stage: test
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -e ".[dev]"
+  script:
+    - ruff check .
+    - ruff format --check .
+    - pytest --cov=src --cov-report=term-missing
+
+# Production demonstration of path-filter in a GitLab CI pipeline
+detect-changed-paths:
+  stage: filter
+  before_script:
+    - pip install -e .
+  script:
+    # Compares changed files between base branch and current commit, or uses changed_files.example.txt in local testing
+    - |
+      if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        git diff --name-only $CI_MERGE_REQUEST_DIFF_BASE_SHA $CI_COMMIT_SHA | ci-path-filter -c filters.yaml -o build.env
+      else
+        ci-path-filter -c filters.yaml -f changed_files.example.txt -o build.env
+      fi
+    - cat build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# Downstream jobs conditionally triggered via dotenv variables
+backend-job:
+  stage: downstream
+  needs: [detect-changed-paths]
+  script:
+    - echo "Executing backend test suite because backend files were modified"
+  rules:
+    - if: $backend == "true"
+
+frontend-job:
+  stage: downstream
+  needs: [detect-changed-paths]
+  script:
+    - echo "Executing frontend build because frontend files were modified"
+  rules:
+    - if: $frontend == "true"
+
+docs-job:
+  stage: downstream
+  needs: [detect-changed-paths]
+  script:
+    - echo "Deploying documentation because markdown files were modified"
+  rules:
+    - if: $docs == "true"

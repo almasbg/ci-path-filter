@@ -1,0 +1,4 @@
+app/src/main/App.kt
+web/components/Navbar.tsx
+README.md
+app/src/test/FiltersTest.kt
